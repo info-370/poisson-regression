@@ -1,0 +1,100 @@
+---
+title: "Poisson Regression"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this learning module, you'll be familiarized with **Poisson Regression** as a method for modeling _count data_. You'll frequently encounter a count outcomes, for example:
+
+- The number of tickets sold for a concert
+- The number of elected Republican congress members
+- The number of crimes that occur in a particular area
+
+As you can imagine, you would want to leverage a statistical technique that assumes a **distribution of counts** for the outcome variable. One distrubtion that meets this constraint is the **poisson distribution**, which can be the assumed outcome distrubution of a **generalized linear model**. In the sections below, you'll review the poisson distribution, implement a Poisson regression, and interpret the results. 
+
+## Resoures
+You may find the following resources helpful in learning about Poisson regression:
+
+- [UCLA Poisson Example](http://www.ats.ucla.edu/stat/r/dae/poissonreg.htm)
+- [Wikipedia: Poisson Regression](https://en.wikipedia.org/wiki/Poisson_regression)
+- [Regression Models for Data Science: Poisson Regression](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression)
+
+## Poisson Distribution
+As you may recall from earlier in the course, the **Poisson Distribution** is a distribution of count values. The distribution is described by a **single parameter** lambda ($\lambda$). Note, 
+
+> In a Poisson distribution, the **mean** is equal to the **variance**. This is captured in the single parameter, lambda ($\lambda$).
+
+The expected probability of observing _K_ events is defined as:
+
+$$ P\left( k\ events \right) =\frac { { \lambda }^{k  }{ e }^{-\lambda  } }{  k!} $$
+
+Given the above formula, the probaility of observing 2 events if the mean number of events is 3 ($\lambda=3$) is:
+
+$$ P\left( 3\ events \right) =\frac { { 3 }^{2  }{ e }^{-3  } }{  2!} =  .22$$
+
+Below are the randomly drawn Poisson distributions for $\lambda=2$, $\lambda=10$, $\lambda=100$ (code found [here](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression): 
+
+```{r, echo=FALSE}
+# Source: https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression
+par(mfrow = c(1, 3))
+plot(0 : 10, dpois(0 : 10, lambda = 2), type = "h", frame = FALSE, xlab="Count (K)", ylab="Observed Events", main="lambda = 2")
+plot(0 : 20, dpois(0 : 20, lambda = 10), type = "h", frame = FALSE, xlab="Count (K)", ylab="Observed Events", main="lambda = 10")
+plot(0 : 200, dpois(0 : 200, lambda = 100), type = "h", frame = FALSE, xlab="Count (K)", ylab="Observed Events", main="lambda = 100")
+```
+
+When modeling count data, it is important to **check the distribution** of your outcome variable to see how well it follows a Poisson distribution. If it does not, you may want to implement a Negative Binomial Regression ([example](http://www.ats.ucla.edu/stat/r/dae/nbreg.htm)), which loosens the assumption that the mean and variance are equal. You can also consider a Zero-Inflated Poisson Regression ([example](http://stats.idre.ucla.edu/r/dae/zip/)), or Zero-Inflated Negative Binomial Regression ([example](http://www.ats.ucla.edu/stat/r/dae/zinbreg.htm)).
+
+## Poisson Formula
+The formula for fitting an outcome variable with a Poisson distribution is a type of **Generalized Linear Model**. The **link** between the **linear** set of inputs and the output is a **log-link**. At a glance, this seems similar to logging the outcome variable. However, directly modeling the log of the outcome is not possible if(when) the _count is zero_ ($log(0) = -Inf$). As such, Poisson Regressions model the **log of the expected value** of the outcome, given a vector of input variables ([source](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression):
+
+$$log\left( E [{ Y }_{i } | {X  }_{i }={x }_{i}] \right) =log\left({\mu }_{i} \right) ={B  }_{ 0 } +{  B}_{  1}{x}_{i}    $$
+In the equation above, the **log of the expected value of ${Y}_{i}$ given ${X}_{i}$** is linearly approximated using ${B  }_{ 0 } +{  B}_{  1}{x}_{i}$. 
+
+Similarly to Logistic regression, the coefficients (betas) are obtained through a _Maximum Likelihood Estimation_ that seeks to produce a formula that maximizes the probability of observing the data. While this MLE procedure is beyond the scope of this course, Poisson models are easily implemented in R or Python.
+
+## Generalized Linear Models
+As noted above, Poisson models are in the family of Generalized Linear Models. The following excerpt from [this book](https://www.amazon.com/Analysis-Regression-Multilevel-Hierarchical-Models/dp/052168689X):
+
+>" _Generalized linear modeling_ is a framework for statistical analysis that includes linear and logistic regression as special cases. Linear regression directly predictes continuous data $y$ from a _linear predictor_ $X\beta = {\beta}_0 + {X}_{1}{\beta}_1 + ... + + {X}_{k}{\beta}_k$. Logistic regression predicts $Pr(y = 1)$ for binary data from a linear preditor with an inverse-logit transofmration. A generalized linear model involves:
+
+>1. A data vecotr $y = (y_1, ..., y_n)$
+2. Precitors $X$ cand coefficnets $\beta$, forming a inear predictor $X\beta$
+3. A _link function $g$_, yielding a vector of transofrmed data $\hat { y} ={ g }^{  -1}(X\beta)$ that are used to model the data
+4. A data stirubtion, $p(y|\hat{y})$
+5. Possibly other parameters, such as variances, overdispersions, and cutpoints,
+involved in the predictors, link function, and data distribution." (p.109)
+
+As such, we assume a **Poisson distribution** and use a _logartithmic transformation_ as the link for a Poisson regression, which allows the set of predicted values ($\hat{y}$)to be **positive**. 
+
+## Implementation
+Implementing a Poisson model in R or Python is a straightforward procedure. Using the generalized linear model function (`glm`), a model can be easily implemented:
+
+```{r eval=FALSE}
+m1 <- glm(outome ~ var1 + var2, family="poisson", data=df)
+```
+
+Here, the model (`m1`) is estimating coefficients for independent variables (`var1` and `var2`) for predicting the _mean expected value_ of an outcome variable (`outcome`). Below is an example from [this website](http://www.ats.ucla.edu/stat/r/dae/poissonreg.htm) of predicting **number of student awards** based on _type of program_ (`prog`) the student is enrolled in (vocational, general or academic) and their score on a final exam in math (`math`).
+
+```{r eval=TRUE, echo=FALSE}
+# Data prep - code from http://www.ats.ucla.edu/stat/r/dae/poissonreg.htm
+p <- read.csv("~/Documents/info-370/poisson-regression/data/poisson_sim.csv", stringsAsFactors = FALSE)
+p <- within(p, {
+    prog <- factor(prog, levels=1:3, labels=c("General", "Academic", "Vocational"))
+    id <- factor(id)
+})
+```
+
+We can see that the distribution of the number of awards is (roughly) Poisson:
+
+```{r echo=FALSE}
+hist(p$num_awards, xlab="Num. Awards", ylab = "Count", main="Distribution of Awards Received")
+```
+
+It is then straightforward to create a Poisson model:
+```{r echo=TRUE, eval=TRUE}
+m1 <- glm(num_awards ~ prog + math, family="poisson", data=p)
+print(summary(m1))
+```
