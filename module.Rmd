@@ -5,6 +5,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
 ```
 
 In this learning module, you'll be familiarized with **Poisson Regression** as a method for modeling _count data_. You'll frequently encounter a count outcomes, for example:
@@ -21,6 +22,7 @@ You may find the following resources helpful in learning about Poisson regressio
 - [UCLA Poisson Example](http://www.ats.ucla.edu/stat/r/dae/poissonreg.htm)
 - [Wikipedia: Poisson Regression](https://en.wikipedia.org/wiki/Poisson_regression)
 - [Regression Models for Data Science: Poisson Regression](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression)
+- [Model fit](https://onlinecourses.science.psu.edu/stat501/node/377)
 
 ## Poisson Distribution
 As you may recall from earlier in the course, the **Poisson Distribution** is a distribution of count values. The distribution is described by a **single parameter** lambda ($\lambda$). Note, 
@@ -50,7 +52,7 @@ When modeling count data, it is important to **check the distribution** of your 
 ## Poisson Formula
 The formula for fitting an outcome variable with a Poisson distribution is a type of **Generalized Linear Model**. The **link** between the **linear** set of inputs and the output is a **log-link**. At a glance, this seems similar to logging the outcome variable. However, directly modeling the log of the outcome is not possible if(when) the _count is zero_ ($log(0) = -Inf$). As such, Poisson Regressions model the **log of the expected value** of the outcome, given a vector of input variables ([source](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression):
 
-$$log\left( E [{ Y }_{i } | {X  }_{i }={x }_{i}] \right) =log\left({\mu }_{i} \right) ={B  }_{ 0 } +{  B}_{  1}{x}_{i}    $$
+$$log\left( E [{ Y }_{i } | {X  }_{i }={x }_{i}] \right) =log\left({\mu }_{i} \right) ={\beta  }_{ 0 } +{  \beta}_{  1}{x}_{i}$$
 In the equation above, the **log of the expected value of ${Y}_{i}$ given ${X}_{i}$** is linearly approximated using ${B  }_{ 0 } +{  B}_{  1}{x}_{i}$. 
 
 Similarly to Logistic regression, the coefficients (betas) are obtained through a _Maximum Likelihood Estimation_ that seeks to produce a formula that maximizes the probability of observing the data. While this MLE procedure is beyond the scope of this course, Poisson models are easily implemented in R or Python.
@@ -93,8 +95,121 @@ We can see that the distribution of the number of awards is (roughly) Poisson:
 hist(p$num_awards, xlab="Num. Awards", ylab = "Count", main="Distribution of Awards Received")
 ```
 
-It is then straightforward to create a Poisson model:
+It is then straightforward to create a Poisson model and view it's results:
 ```{r echo=TRUE, eval=TRUE}
 m1 <- glm(num_awards ~ prog + math, family="poisson", data=p)
 print(summary(m1))
 ```
+
+The model is implementing the following formula:
+
+$$log\left( E [{ Awards }_{i } | {X  }_{i }={x }_{i}] \right)={\beta  }_{ 0 } +{  \beta}_{  1}{MathScore}_{i} +{  \beta}_{  2}{Program}_{i}$$
+
+## Interpretation
+Similarly to Logistic regression, we're modeling an outcome in **log space**. However, while logistic regression models the **log odds**, Poisson regression models the **log expected value**, making the coefficients somewhat more interpretable. Consider the expected value of $Y$ given some particular value of $X$: $Y_i|X=x_i$. We're modeling the **log expected value** as follows:
+
+$$log\left( E [{ Y }_{i } | {X  }_{i }={x }_{i}] \right) = {\beta }_{ 0 } +{  \beta}_{  1}{x}_{i}    $$
+
+We can then compute the expected value by exponentiating the $\beta$ values:
+
+$$ E [{ Y }_{i } | {X  }_{i }={x }_{i}] = e^{{B  }_{ 0 } +{  B}_{  1}{x}_{i}}    $$
+If we want to understand the effect of a **single unit-increase** in $x_i$, we can define the expected value of $Y_{i + 1}$:
+
+$$ E [{ Y }_{i + 1 } | {X  }_{i }={x }_{i+1}] = e^{{\beta  }_{ 0 } +{  \beta}_{  1}{x}_{i+1}}    $$
+
+The **ratio** between these two values can be reduced to:
+
+$$ \frac{E [{ Y }_{i + 1 } | {X  }_{i }={x }_{i+1}]}{E [{ Y }_{i } | {X  }_{i }={x }_{i}]} = e^{\beta_1}$$
+
+Thus, when we **exponentiate our $B_1$ value, we can calculate the **proportial increase in the expected value** of our outcome variable. 
+
+Using the example above, our $\beta_1$ value, it returns the expected proportional increase in the _expected_ number of awards won for each unit increase in Final Exam math score. The estimated coefficient for score is `r m1$cofficients[4]`, which (when exponentiated) is `r exp(m1$coefficients[4])`. Thus, the **expected number of awards** increases by a factor of `r exp(m1$coefficients[4])` for each unit increase in math score. 
+
+## Evaluation
+Now that we have an interpretation of the **beta values**, we also need a way to evaluate the model fit. The simplest way to do this is to generate a set of predictions and visualize the relationship between the predictions and the actual values. 
+
+Using the `predict` function (part of `glm`), it's simple to generate predictions:
+
+```{r}
+# Generate predictions that are in the same space as the response
+p$preds <- predict(m1, p, type = 'response')
+```
+
+We can see how the predicted number of awards increases with math score (for students in each progam):
+
+```{r echo=FALSE}
+ggplot(data=p, aes(x=math, y=preds, group = prog, colour = prog)) +
+    geom_line() + 
+    labs(x="Math Score", y="Predicted Number of Awards") +
+    ggtitle("Predicted Awards by Program") + 
+    scale_colour_discrete('Program')     
+```
+
+These predicted values make intuitive sense. However, when we add the points themselves, the exact fit seems more suspect:
+
+```{r echo=FALSE}
+ggplot(data=p, aes(x=math, y=preds, group = prog, colour = prog)) +
+    geom_line() + 
+    geom_point(aes(x=math, y=num_awards, group=prog, colour = prog)) +
+    labs(x="Math Score", y="Predicted Number of Awards") +
+    ggtitle("Predicted Awards by Program") + 
+    scale_colour_discrete('Program')     
+```
+
+Alteratively, we can just compare our predictions directly to our data:
+
+```{r echo=FALSE}
+ggplot(data=p, aes(x=num_awards, y=preds, group = prog, colour = prog)) +
+    geom_point() + 
+    labs(x="Num. awards (observed)", y="Num. awards (predicted)") +
+    ggtitle("Observed v.s. predicted awards") + 
+    scale_colour_discrete('Program')     
+```
+
+
+To see these a bit more in depth, we can jitter the points:
+
+```{r, echo=FALSE}
+ggplot(data=p, aes(x=num_awards, y=preds, group = prog, colour = prog)) +
+    geom_jitter() + 
+    labs(x="Num. awards (observed)", y="Num. awards (predicted)") +
+    ggtitle("Observed v.s. predicted awards") + 
+    scale_colour_discrete('Program')     
+```
+
+## Goodness of Fit
+There are a variety of goodness of fit tests we may perform, which are well summarized [here](https://onlinecourses.science.psu.edu/stat501/node/377). We'll begin by introducing the **Pearson Statistic**, also known as the **Pearson chi-squared test statistic**. It is calculated as:
+
+$$ X^2=\sum_{i=1}^{n}\frac{(y_{i}-\exp\{\textbf{X}_{i}\hat{\beta}\})^{2}}{\exp\{\textbf{X}_{i}\hat{\beta}\}}$$
+
+It is the sum of the squared differences between observed and expected values (normalized by the expected values). We can easily calculate this value using the `residuals` function:
+
+
+```{r}
+# Calculate Person statistic residuals
+chi.sq <- sum(residuals(m1, type = "pearson")^2)
+```
+
+As you can see, the value of this will depend on the number of observations in your dataset, or your _degrees of freedom_. Using the `pchisq` function, we can ask, _is this value statistically significant, given the number of observations_?
+
+```{r}
+# Get p value associated with the chi-square statistic
+chi.sq <- sum(residuals(m1, type = "pearson")^2)
+p.value <- pchisq(chi.sq, m1$df.residual)
+```
+
+Interestingly, the null hypothesis here is **that our model is correct**. The weak p-value _is not_ enough to reject our null hypothesis. This is well summarized in the example [here](http://www.ats.ucla.edu/stat/r/dae/poissonreg.htm):
+
+> "The information on deviance is also provided. We can use the residual deviance to perform a goodness of fit test for the overall model. The residual deviance is the difference between the deviance of the current model and the maximum deviance of the ideal model where the predicted values are identical to the observed. Therefore, if the residual difference is small enough, the goodness of fit test will not be significant, indicating that the model fits the data. We conclude that the model fits reasonably well because the goodness-of-fit chi-squared test is not statistically significant. If the test had been statistically significant, it would indicate that the data do not fit the model well. In that situation, we may try to determine if there are omitted predictor variables, if our linearity assumption holds and/or if there is an issue of over-dispersion."
+
+Similarly, we can calculate the **deviance** of our model as follows:
+
+$$ D=2\sum_{i=1}^{n}\biggl[y_{i}\log\biggl(\frac{y_{i}}{\exp\{\textbf{X}_{i}\hat{\beta}\}}\biggr)-(y_{i}-\exp\{\textbf{X}_{i}\hat{\beta}\})\biggr]$$
+Luckily, the deviance is returned by our model, and can be accessed as `model.name$deviance`. The p-value for our deviance can be calculated as:
+
+```{r}
+# Calculate deviance p value
+deviance.p.value <- pchisq(m1$deviance, m1$df.residual, lower.tail=FALSE)
+```
+
+The observed deviance p value of `r deviance.p.value` indicates that we **cannot reject our model** based on this statistic. 
