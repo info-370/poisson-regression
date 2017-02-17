@@ -14,7 +14,7 @@ In this learning module, you'll be familiarized with **Poisson Regression** as a
 - The number of elected Republican congress members
 - The number of crimes that occur in a particular area
 
-As you can imagine, you would want to leverage a statistical technique that assumes a **distribution of counts** for the outcome variable. One distrubtion that meets this constraint is the **poisson distribution**, which can be the assumed outcome distrubution of a **generalized linear model**. In the sections below, you'll review the poisson distribution, implement a Poisson regression, and interpret the results. 
+As you can imagine, you would want to leverage a statistical technique that assumes a **distribution of counts** for the outcome variable. One distrubtion that meets this constraint is the **Poisson distribution**, which can be used as in a **generalized linear model**. In the sections below, you'll review the Poisson distribution, implement a Poisson regression, and interpret the results. 
 
 ## Resoures
 You may find the following resources helpful in learning about Poisson regression:
@@ -27,7 +27,7 @@ You may find the following resources helpful in learning about Poisson regressio
 ## Poisson Distribution
 As you may recall from earlier in the course, the **Poisson Distribution** is a distribution of count values. The distribution is described by a **single parameter** lambda ($\lambda$). Note, 
 
-> In a Poisson distribution, the **mean** is equal to the **variance**. This is captured in the single parameter, lambda ($\lambda$).
+> _In a Poisson distribution, the **mean** is equal to the **variance**. This is captured in the single parameter, lambda ($\lambda$)_.
 
 The expected probability of observing _K_ events is defined as:
 
@@ -35,9 +35,9 @@ $$ P\left( k\ events \right) =\frac { { \lambda }^{k  }{ e }^{-\lambda  } }{  k!
 
 Given the above formula, the probaility of observing 2 events if the mean number of events is 3 ($\lambda=3$) is:
 
-$$ P\left( 3\ events \right) =\frac { { 3 }^{2  }{ e }^{-3  } }{  2!} =  .22$$
+$$ P\left( 2\ events \right) =\frac { { 3 }^{2}{ e }^{-3  } }{  2!} =  .22$$
 
-Below are the randomly drawn Poisson distributions for $\lambda=2$, $\lambda=10$, $\lambda=100$ (code found [here](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression): 
+Below are the randomly generated Poisson distributions for $\lambda=2$, $\lambda=10$, $\lambda=100$ (code found [here](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression)): 
 
 ```{r, echo=FALSE}
 # Source: https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression
@@ -50,7 +50,7 @@ plot(0 : 200, dpois(0 : 200, lambda = 100), type = "h", frame = FALSE, xlab="Cou
 When modeling count data, it is important to **check the distribution** of your outcome variable to see how well it follows a Poisson distribution. If it does not, you may want to implement a Negative Binomial Regression ([example](http://www.ats.ucla.edu/stat/r/dae/nbreg.htm)), which loosens the assumption that the mean and variance are equal. You can also consider a Zero-Inflated Poisson Regression ([example](http://stats.idre.ucla.edu/r/dae/zip/)), or Zero-Inflated Negative Binomial Regression ([example](http://www.ats.ucla.edu/stat/r/dae/zinbreg.htm)).
 
 ## Poisson Formula
-The formula for fitting an outcome variable with a Poisson distribution is a type of **Generalized Linear Model**. The **link** between the **linear** set of inputs and the output is a **log-link**. At a glance, this seems similar to logging the outcome variable. However, directly modeling the log of the outcome is not possible if(when) the _count is zero_ ($log(0) = -Inf$). As such, Poisson Regressions model the **log of the expected value** of the outcome, given a vector of input variables ([source](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression):
+The formula for fitting an outcome variable with a Poisson distribution is a type of **Generalized Linear Model**. The **link** between the **linear** set of inputs and the output is a **log-link**. At a glance, this seems similar to logging the outcome variable and running a linear regression. However, directly modeling the log of the outcome is not possible if(when) the _count is zero_ ($log(0) = -Inf$). As such, Poisson regressions model the **log of the expected value** of the outcome, given a vector of input variables ([source](https://leanpub.com/regmods/read#leanpub-auto-example-poisson-regression)):
 
 $$log\left( E [{ Y }_{i } | {X  }_{i }={x }_{i}] \right) =log\left({\mu }_{i} \right) ={\beta  }_{ 0 } +{  \beta}_{  1}{x}_{i}$$
 In the equation above, the **log of the expected value of ${Y}_{i}$ given ${X}_{i}$** is linearly approximated using ${B  }_{ 0 } +{  B}_{  1}{x}_{i}$. 
@@ -58,21 +58,21 @@ In the equation above, the **log of the expected value of ${Y}_{i}$ given ${X}_{
 Similarly to Logistic regression, the coefficients (betas) are obtained through a _Maximum Likelihood Estimation_ that seeks to produce a formula that maximizes the probability of observing the data. While this MLE procedure is beyond the scope of this course, Poisson models are easily implemented in R or Python.
 
 ## Generalized Linear Models
-As noted above, Poisson models are in the family of Generalized Linear Models. The following excerpt from [this book](https://www.amazon.com/Analysis-Regression-Multilevel-Hierarchical-Models/dp/052168689X):
+As noted above, Poisson models are in the family of Generalized Linear Models. The following excerpt from [this book](https://www.amazon.com/Analysis-Regression-Multilevel-Hierarchical-Models/dp/052168689X) describes them well:
 
->" _Generalized linear modeling_ is a framework for statistical analysis that includes linear and logistic regression as special cases. Linear regression directly predictes continuous data $y$ from a _linear predictor_ $X\beta = {\beta}_0 + {X}_{1}{\beta}_1 + ... + + {X}_{k}{\beta}_k$. Logistic regression predicts $Pr(y = 1)$ for binary data from a linear preditor with an inverse-logit transofmration. A generalized linear model involves:
+>"_Generalized linear modeling_ is a framework for statistical analysis that includes linear and logistic regression as special cases. Linear regression directly predictes continuous data $y$ from a _linear predictor_ $X\beta = {\beta}_0 + {X}_{1}{\beta}_1 + ... + + {X}_{k}{\beta}_k$. Logistic regression predicts $Pr(y = 1)$ for binary data from a linear preditor with an inverse-logit transofmration. A generalized linear model involves:
 
 >1. A data vecotr $y = (y_1, ..., y_n)$
-2. Precitors $X$ cand coefficnets $\beta$, forming a inear predictor $X\beta$
+2. Precitors $X$ and coefficnets $\beta$, forming a inear predictor $X\beta$
 3. A _link function $g$_, yielding a vector of transofrmed data $\hat { y} ={ g }^{  -1}(X\beta)$ that are used to model the data
-4. A data stirubtion, $p(y|\hat{y})$
+4. A data distirubtion, $p(y|\hat{y})$
 5. Possibly other parameters, such as variances, overdispersions, and cutpoints,
 involved in the predictors, link function, and data distribution." (p.109)
 
 As such, we assume a **Poisson distribution** and use a _logartithmic transformation_ as the link for a Poisson regression, which allows the set of predicted values ($\hat{y}$)to be **positive**. 
 
 ## Implementation
-Implementing a Poisson model in R or Python is a straightforward procedure. Using the generalized linear model function (`glm`), a model can be easily implemented:
+Implementing a Poisson model in R or Python is a straightforward procedure. Using the generalized linear model function (`glm`), a model can be easily declared:
 
 ```{r eval=FALSE}
 m1 <- glm(outome ~ var1 + var2, family="poisson", data=df)
@@ -92,11 +92,13 @@ p <- within(p, {
 We can see that the distribution of the number of awards is (roughly) Poisson:
 
 ```{r echo=FALSE}
+# Create a histrogram of the outcome variable
 hist(p$num_awards, xlab="Num. Awards", ylab = "Count", main="Distribution of Awards Received")
 ```
 
 It is then straightforward to create a Poisson model and view it's results:
 ```{r echo=TRUE, eval=TRUE}
+# Generage a Poisson model of our data
 m1 <- glm(num_awards ~ prog + math, family="poisson", data=p)
 print(summary(m1))
 ```
@@ -121,9 +123,15 @@ The **ratio** between these two values can be reduced to:
 
 $$ \frac{E [{ Y }_{i + 1 } | {X  }_{i }={x }_{i+1}]}{E [{ Y }_{i } | {X  }_{i }={x }_{i}]} = e^{\beta_1}$$
 
-Thus, when we **exponentiate our $B_1$ value, we can calculate the **proportial increase in the expected value** of our outcome variable. 
+Thus, when we **exponentiate our $\beta_1$** value, we can calculate the **proportial increase in the expected value** of our outcome variable. 
 
-Using the example above, our $\beta_1$ value, it returns the expected proportional increase in the _expected_ number of awards won for each unit increase in Final Exam math score. The estimated coefficient for score is `r m1$cofficients[4]`, which (when exponentiated) is `r exp(m1$coefficients[4])`. Thus, the **expected number of awards** increases by a factor of `r exp(m1$coefficients[4])` for each unit increase in math score. 
+```{r echo=FALSE}
+# Round values for upcoming paragraph
+coef <- round(m1$coefficients[4],2)
+exp.coef <- round(exp(m1$coefficients[4]),2)
+
+```
+Using the example above, when we exponentiate our $\beta_1$ value, it returns the **proportional increase** in the _expected_ number of awards (for each unit increase in math exam score). The estimated coefficient for score is `r coef`, which (when exponentiated) is `r exp.coef`. Thus, the **expected number of awards** increases by a factor of `r exp.coef` for each unit increase in math score. 
 
 ## Evaluation
 Now that we have an interpretation of the **beta values**, we also need a way to evaluate the model fit. The simplest way to do this is to generate a set of predictions and visualize the relationship between the predictions and the actual values. 
@@ -166,16 +174,7 @@ ggplot(data=p, aes(x=num_awards, y=preds, group = prog, colour = prog)) +
     scale_colour_discrete('Program')     
 ```
 
-
-To see these a bit more in depth, we can jitter the points:
-
-```{r, echo=FALSE}
-ggplot(data=p, aes(x=num_awards, y=preds, group = prog, colour = prog)) +
-    geom_jitter() + 
-    labs(x="Num. awards (observed)", y="Num. awards (predicted)") +
-    ggtitle("Observed v.s. predicted awards") + 
-    scale_colour_discrete('Program')     
-```
+As you can see, predicting the actual number of counts is a statistical challenge. However, that _does not necessarily_ mean that the relationships observed in our betas should be disregarded. In order to make a more assertive assessment, we can use various _goodness of fit_ metrics.
 
 ## Goodness of Fit
 There are a variety of goodness of fit tests we may perform, which are well summarized [here](https://onlinecourses.science.psu.edu/stat501/node/377). We'll begin by introducing the **Pearson Statistic**, also known as the **Pearson chi-squared test statistic**. It is calculated as:
@@ -200,7 +199,7 @@ p.value <- pchisq(chi.sq, m1$df.residual)
 
 Interestingly, the null hypothesis here is **that our model is correct**. The weak p-value _is not_ enough to reject our null hypothesis. This is well summarized in the example [here](http://www.ats.ucla.edu/stat/r/dae/poissonreg.htm):
 
-> "The information on deviance is also provided. We can use the residual deviance to perform a goodness of fit test for the overall model. The residual deviance is the difference between the deviance of the current model and the maximum deviance of the ideal model where the predicted values are identical to the observed. Therefore, if the residual difference is small enough, the goodness of fit test will not be significant, indicating that the model fits the data. We conclude that the model fits reasonably well because the goodness-of-fit chi-squared test is not statistically significant. If the test had been statistically significant, it would indicate that the data do not fit the model well. In that situation, we may try to determine if there are omitted predictor variables, if our linearity assumption holds and/or if there is an issue of over-dispersion."
+> _"The information on deviance is also provided. We can use the residual deviance to perform a goodness of fit test for the overall model. The residual deviance is the difference between the deviance of the current model and the maximum deviance of the ideal model where the predicted values are identical to the observed. Therefore, if the residual difference is small enough, the goodness of fit test will not be significant, indicating that the model fits the data. We conclude that the model fits reasonably well because the goodness-of-fit chi-squared test is not statistically significant. If the test had been statistically significant, it would indicate that the data do not fit the model well. In that situation, we may try to determine if there are omitted predictor variables, if our linearity assumption holds and/or if there is an issue of over-dispersion."_
 
 Similarly, we can calculate the **deviance** of our model as follows:
 
@@ -212,4 +211,4 @@ Luckily, the deviance is returned by our model, and can be accessed as `model.na
 deviance.p.value <- pchisq(m1$deviance, m1$df.residual, lower.tail=FALSE)
 ```
 
-The observed deviance p value of `r deviance.p.value` indicates that we **cannot reject our model** based on this statistic. 
+The observed deviance p value of `r round(deviance.p.value,2)` indicates that we **cannot reject our model** based on this statistic. 
